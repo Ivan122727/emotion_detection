@@ -1,0 +1,31 @@
+import torch
+from torchvision import transforms
+from PIL import Image
+from config import load_model
+
+# Определите устройство
+device, model = load_model()
+label_list = ['angry','disgusted', 'fearful', 'happy', 'neutral', 'sad', 'surprised']
+
+predict_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[.485, .456, .406], std=[0.229, 0.224, 0.225])
+])
+
+def predict_image(image_path, model, transforms, device):
+    # Открыть и преобразовать изображение
+    image = Image.open(image_path).convert('RGB')
+    image = transforms(image).unsqueeze(0)  # Добавить батч размерности
+
+    # Переместить изображение на устройство
+    image = image.to(device)
+
+    # Сделать предсказание
+    with torch.no_grad():
+        outputs = model(image)
+        _, predicted = torch.max(outputs, 1)
+    
+    predicted_label = label_list[predicted.item()]
+
+    return predicted_label
